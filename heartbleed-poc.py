@@ -155,7 +155,7 @@ def check(host, port, version, dumpf, quiet, starttls):
 			s = smtplib.SMTP(host=host,port=port)
 			s.ehlo()
 			s.starttls()
-		except SMTPException:
+		except smtplib.SMTPException:
 			print 'STARTTLS not supported...'
 			s.quit()
 			sys.exit(0)
