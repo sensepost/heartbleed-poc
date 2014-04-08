@@ -20,7 +20,6 @@ options.add_option('-f', '--file', type='str', default='dump.bin', help='Filenam
 options.add_option('-v', '--ver', type='int', default=2, help='TLS version 1 is 1.0, 2 is 1.1, 3 is 1.2, 0 will try all (default: 0)')
 options.add_option('-q', '--quiet', default=False, help='Do not display the memory dump', action='store_true')
 options.add_option('-s', '--starttls', action='store_true', default=False, help='Check STARTTLS')
-options.add_option('-d', '--debug', action='store_true', default=False, help='Enable debug output')
 
 def h2bin(x):
 	return x.replace(' ', '').replace('\n', '').decode('hex')
@@ -200,7 +199,6 @@ def main():
 
 	print 'Scanning ' + args[0] + ' on port ' + str(opts.port)
 	for i in xrange(0,opts.num):
-		check(args[0], opts.port, opts.ver, opts.file, opts.quiet, opts.starttls)	
 		if (opts.ver == 0):
 			one = 0
 			two = 0
@@ -211,6 +209,8 @@ def main():
 			if one: print 'TLS v1.0 on '+ args[0] +' is vulnerable'
 			if two: print 'TLS v1.1 on '+ args[0] +' is vulnerable'
 			if three: print 'TLS v1.2 on '+ args[0] +' is vulnerable'
+		else:
+			check(args[0], opts.port, opts.ver, opts.file, opts.quiet, opts.starttls)	
 
 if __name__ == '__main__':
 	main()
