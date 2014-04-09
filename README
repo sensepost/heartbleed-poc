@@ -18,7 +18,7 @@ Options:
 Examples
 --------
 
-* Normal scan, will hit port 443, attempt all TLS versions with 1 iteration):
+* Normal scan, will hit port 443, with 1 iteration:
 python heartbleed-poc.py example.com
 
 * Dump memory scan, will make 100 request and put the output in the binary file dump.bin:

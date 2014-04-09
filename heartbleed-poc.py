@@ -2,7 +2,7 @@
 
 # Quick and dirty demonstration of CVE-2014-0160 originally by Jared Stafford (jspenguin@jspenguin.org)
 # The author disclaims copyright to this source code.
-# Modified by others
+# Modified by SensePost based on lots of other people's efforts (hard to work out credit via PasteBin)
 
 import sys
 import struct
