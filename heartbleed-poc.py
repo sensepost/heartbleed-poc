@@ -17,7 +17,7 @@ options = OptionParser(usage='%prog server [options]', description='Test for SSL
 options.add_option('-p', '--port', type='int', default=443, help='TCP port to test (default: 443)')
 options.add_option('-n', '--num', type='int', default=1, help='Number of heartbeats to send if vulnerable (defines how much memory you get back) (default: 1)')
 options.add_option('-f', '--file', type='str', default='dump.bin', help='Filename to write dumped memory too (default: dump.bin)')
-options.add_option('-v', '--ver', type='int', default=2, help='TLS version 1 is 1.0, 2 is 1.1, 3 is 1.2, 0 will try all (default: 0)')
+options.add_option('-v', '--ver', type='int', default=0, help='TLS version 1 is 1.0, 2 is 1.1, 3 is 1.2, 0 will try all (default: 0)')
 options.add_option('-q', '--quiet', default=False, help='Do not display the memory dump', action='store_true')
 options.add_option('-s', '--starttls', action='store_true', default=False, help='Check STARTTLS (smtp only right now)')
 
