@@ -46,4 +46,4 @@ awk '/[HPG][UEO][AST][DT ]/,/Connection/' dump.bin
 grep -a "^Cookie:" dump.bin
 
 * Interesting Key Value Pairs:
-grep -a "\&" dump.bin|grep -av "[\<\>]"|grep -ai "[a-z0-9_-]*=[0-9a-z]*"
+pcregrep -ao "[A-Za-z0-9_-]+=[0-9a-zA-Z]+" dump.bin
