@@ -87,7 +87,6 @@ def recvall(s, length, timeout=5):
 			remain -= len(data)
 	return rdata
 
-
 def recvmsg(s):
 	hdr = recvall(s, 5)
 	if hdr is None:
@@ -157,7 +156,7 @@ def check(host, port, version, dumpf, quiet, starttls):
 		except smtplib.SMTPException:
 			print 'STARTTLS not supported...'
 			s.quit()
-			sys.exit(0)
+			return False
 		print 'STARTTLS supported...'
 		s.quit()
 		s = connect(host, port, quiet)
@@ -178,11 +177,11 @@ def check(host, port, version, dumpf, quiet, starttls):
 	serverversion = parseresp(s)
 
 	if serverversion == 0:
-		print "Got 0 from parseresp"
-		return
+		if not quiet: print "Got an error while parsing the response, bailing ..."
+		return False
 	else:
 		serverversion = serverversion - 0x0300
-		print "Our version was %d, server version was %d\n" % (version, serverversion)
+		if not quiet: print "Our version was %d, server version was %d\n" % (version, serverversion)
 		version = serverversion
 
 	if not quiet: print 'Sending heartbeat request...'
