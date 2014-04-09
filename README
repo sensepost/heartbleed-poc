@@ -44,3 +44,31 @@ grep -a "^Cookie:" dump.bin
 
 * Interesting Key Value Pairs:
 pcregrep -ao "[A-Za-z0-9_-]+=[0-9a-zA-Z]+" dump.bin
+
+NMAP NSE Script
+---------------
+
+Usage:
+nmap --script=ssl-heartbleed -p 443 <server>
+
+Example Output:
+
+Starting Nmap 6.41SVN ( http://nmap.org ) at 2014-04-09 17:27 SAST
+Nmap scan report for <example.org> (1.2.3.4)
+Host is up (0.0068s latency).
+PORT    STATE SERVICE
+443/tcp open  https
+| ssl-heartbleed: 
+|   VULNERABLE:
+|   The Heartbleed Bug is a serious vulnerability in the popular OpenSSL cryptographic software library. It allows for stealing information intended to be protected by SSL/TLS encryption.
+|     State: VULNERABLE
+|     Risk factor: High
+|     Description:
+|       OpenSSL versions 1.0.1 and 1.0.2-beta releases (including 1.0.1f and 1.0.2-beta1) of OpenSSL are affected by the Heartbleed bug. The bug allows for reading memory of systems protected by the vulnerable OpenSSL versions and could allow for disclosure of otherwise encrypted confidential information as well as the encryption keys themselves.
+|       
+|     References:
+|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2014-0160
+|       http://www.openssl.org/news/secadv_20140407.txt 
+|_      http://cvedetails.com/cve/2014-0160/
+
+Nmap done: 1 IP address (1 host up) scanned in 0.23 seconds
