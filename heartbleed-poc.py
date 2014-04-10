@@ -75,7 +75,10 @@ def recvall(s, length, timeout=5):
 	while remain > 0:
 		rtime = endtime - time.time()
 		if rtime < 0:
-			return None
+			if not rdata:
+				return None
+			else:
+				return rdata
 		r, w, e = select.select([s], [], [], 5)
 		if s in r:
 			data = s.recv(remain)
