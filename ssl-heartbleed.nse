@@ -30,15 +30,14 @@ local match = require('match')
 local shortport = require('shortport')
 local stdnse = require('stdnse')
 local vulns = require('vulns')
+local sslcert = require('sslcert')
 
 author = "Patrik Karlsson <patrik@cqure.net> updates by Dane Goodwin <dane@sensepost.com>"
 license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
 categories = { "vuln", "safe" }
 
 portrule = function(host, port)
-    result = false
-    pcall(function () result = shortport.ssl(host, port) or sslcert.isPortSupported(port) end)
-    return result
+	return shortport.ssl(host, port) or sslcert.isPortSupported(port)
 end
 
 local function recvmsg(s)
