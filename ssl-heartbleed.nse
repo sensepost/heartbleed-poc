@@ -102,7 +102,12 @@ OpenSSL versions 1.0.1 and 1.0.2-beta releases (including 1.0.1f and 1.0.2-beta1
 	
 	while(true) do
 		local status, typ, ver, pay = recvmsg(s)
-		version = ver - 0x0300
+		if not ver then
+			stdnse.print_debug(3, 'No TLS version from server, exiting.')
+			return report:make_output(vuln_table)
+		else
+			version = ver - 0x0300
+		end
 		if not status then
 			return report:make_output(vuln_table)
 		end
