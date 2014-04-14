@@ -1,6 +1,8 @@
 HeartBleed Tester & Exploit
 ---------------------------
 
+*NB* Nearly all the tools (nmap, metasploit, nessus, even burp) have the most up to date versions of their scanners. These tools were released at the early stages when tools were still being developed. Rather use those than these now.
+
 Tool Guide
 ----------
 
